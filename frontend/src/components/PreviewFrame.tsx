@@ -1,105 +1,106 @@
-'use client'
-
-import { WebContainer } from '@webcontainer/api';
 import React, { useEffect, useState } from 'react';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { WebContainer } from '@webcontainer/api';
+import { Loader2Icon, ServerIcon, CodeIcon } from 'lucide-react';
 
 interface PreviewFrameProps {
   files: any[];
-  webContainer?: WebContainer;
+  webContainer: WebContainer;
 }
 
 export function PreviewFrame({ files, webContainer }: PreviewFrameProps) {
   const [url, setUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<'idle' | 'installing' | 'building' | 'ready' | 'error'>('idle');
+  const [progress, setProgress] = useState<string>('Initializing WebContainer...');
 
   async function main() {
-    if (!webContainer) return;
-
     try {
-      setLoading(true);
-      setError(null);
-
-      const installProcess = await webContainer.spawn('npm', ['install']);
+      setStatus('installing');
+      setProgress('Installing dependencies...');
       
+      const installProcess = await webContainer.spawn('npm', ['install']);
+
       installProcess.output.pipeTo(new WritableStream({
         write(data) {
           console.log(data);
         }
       }));
 
+      setStatus('building');
+      setProgress('Starting development server...');
       await webContainer.spawn('npm', ['run', 'dev']);
 
-      webContainer.on('server-ready', (port, serverUrl) => {
-        console.log(serverUrl);
+      // Wait for `server-ready` event
+      webContainer.on('server-ready', (port, url) => {
+        console.log(url);
         console.log(port);
-        setUrl(serverUrl);
-        setLoading(false);
+        setUrl(url);
+        setStatus('ready');
+        setProgress('Preview is ready!');
       });
     } catch (error) {
-      console.error('Error setting up WebContainer:', error);
-      setError('Failed to set up the preview. Please try again.');
-      setLoading(false);
+      console.error('WebContainer initialization error:', error);
+      setStatus('error');
+      setProgress('Failed to start preview');
     }
   }
 
   useEffect(() => {
-    if (webContainer) {
-      main();
-    }
-  }, [webContainer]);
-  return (
-    <div className="w-full max-w-4xl mx-auto p-4">
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        {loading && (
-          <div className="flex items-center justify-center h-96 bg-gray-100">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            <span className="ml-2 text-lg font-medium text-gray-600">Setting up preview...</span>
-          </div>
-        )}
-        {error && (
-          <div className="flex items-center justify-center h-96 bg-red-50">
-            <AlertCircle className="w-8 h-8 text-red-500" />
-            <span className="ml-2 text-lg font-medium text-red-700">{error}</span>
-          </div>
-        )}
-        {url && (
-          <iframe 
-            src={url} 
-            className="w-full h-[600px] border-none"
-            title="Preview"
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function App() {
-  const [webContainer, setWebContainer] = useState<WebContainer | undefined>(undefined);
-
-  useEffect(() => {
-    async function initWebContainer() {
-      try {
-        const container = await WebContainer.boot();
-        setWebContainer(container);
-      } catch (error) {
-        console.error('Failed to initialize WebContainer:', error);
-      }
-    }
-
-    initWebContainer();
+    main();
   }, []);
 
+  const renderLoadingState = () => {
+    const statusIcons = {
+      idle: <ServerIcon className="w-12 h-12 text-gray-400 animate-pulse" />,
+      installing: <Loader2Icon className="w-12 h-12 text-blue-500 animate-spin" />,
+      building: <CodeIcon className="w-12 h-12 text-green-500 animate-bounce" />,
+      ready: <ServerIcon className="w-12 h-12 text-green-600" />,
+      error: <ServerIcon className="w-12 h-12 text-red-500" />
+    };
+
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-6 bg-gray-50 rounded-lg">
+        <div className="mb-4">
+          {statusIcons[status]}
+        </div>
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">
+            {status === 'error' ? 'Oops! Something went wrong' : 'Preparing Your Preview'}
+          </h2>
+          <p className="text-gray-500 max-w-md">
+            {progress}
+          </p>
+          {status === 'error' && (
+            <button 
+              onClick={() => main()} 
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+            >
+              Retry
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">WebContainer Preview</h1>
-      <PreviewFrame 
-        webContainer={webContainer} 
-        files={[]} // Provide an empty array or your actual files
-      />
+    <div className="h-full w-full relative overflow-hidden rounded-lg shadow-lg">
+      {!url ? (
+        renderLoadingState()
+      ) : (
+        <div className="absolute inset-0">
+          <iframe 
+            src={url} 
+            width="100%" 
+            height="100%" 
+            className="border-none w-full h-full"
+          />
+          <div className="absolute top-2 right-2 bg-white/80 px-3 py-1 rounded-full text-sm text-gray-700 shadow-md">
+            🌐 Preview Ready
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
+export default PreviewFrame;

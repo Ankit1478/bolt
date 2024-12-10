@@ -10,6 +10,7 @@ import axios from 'axios';
 import { BACKEND_URL } from '../config';
 import { parseXml } from '../steps';
 import { useWebContainer } from '../hooks/useWebContainer';
+import { FileNode } from '@webcontainer/api';
 import { Loader } from '../components/Loader';
 import JSZip from 'jszip';
 import { 
@@ -405,7 +406,9 @@ export function Builder() {
               {activeTab === "code" ? (
                 <CodeEditor file={selectedFile} loading={loading || !templateSet} />
               ) : (
-                <PreviewFrame key={`${activeTab}-${files.length}`} webContainer={webcontainer} files={files} />
+                webcontainer ? (
+                  <PreviewFrame webContainer={webcontainer} files={files} />
+                ) : null
               )}
             </div>
           </div>
