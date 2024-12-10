@@ -10,7 +10,7 @@ interface StepsListProps {
 
 export function StepsList({ steps, currentStep, onStepClick }: StepsListProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-5">
       <h2 className="text-xl font-bold text-white tracking-tight [text-shadow:0_0_20px_#3B82F640]">
         Build Steps
       </h2>

@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/config/env.ts","./src/constants/constants.ts","./src/controller/index.ts","./src/defaults/next.ts","./src/defaults/node.ts","./src/defaults/react.ts","./src/prompts/prompts.ts","./src/routes/mainRoute.ts","./src/utils/stripIndents.ts"],"version":"5.7.2"}
+{"root":["./src/index.ts","./src/config/env.ts","./src/constants/constants.ts","./src/controller/index.ts","./src/defaults/next.ts","./src/defaults/node.ts","./src/defaults/react.ts","./src/prompts/prompts.ts","./src/routes/mainroute.ts","./src/utils/stripindents.ts"],"version":"5.7.2"}

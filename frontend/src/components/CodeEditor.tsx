@@ -1,13 +1,72 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { FileItem } from "../types";
-import { File } from "lucide-react";
+import { File, Loader2 } from "lucide-react";
 
 interface CodeEditorProps {
   file: FileItem | null;
+  loading?: boolean;
+  onContentReceive?: (content: string) => void;
 }
 
-export function CodeEditor({ file }: CodeEditorProps) {
+export function CodeEditor({ 
+  file, 
+  loading = false, 
+  onContentReceive 
+}: CodeEditorProps) {
+  const [displayContent, setDisplayContent] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+
+  useEffect(() => {
+    // Reset display content when file changes
+    setDisplayContent("");
+    setIsStreaming(false);
+
+    // If file content is already available, set it immediately
+    if (file?.content) {
+      streamContent(file.content);
+    }
+  }, [file]);
+
+  const streamContent = (content: string) => {
+    if (!content) return;
+
+    setIsStreaming(true);
+    let currentIndex = 0;
+
+    const streamInterval = setInterval(() => {
+      if (currentIndex < content.length) {
+        // Determine chunk size - vary between 5-15 characters for more natural streaming
+        const chunkSize = Math.floor(Math.random() * 10) + 5;
+        const nextChunk = content.slice(currentIndex, currentIndex + chunkSize);
+        
+        setDisplayContent(prev => prev + nextChunk);
+        currentIndex += chunkSize;
+
+        // Optional: Call callback if provided
+        onContentReceive?.(displayContent + nextChunk);
+      } else {
+        clearInterval(streamInterval);
+        setIsStreaming(false);
+      }
+    }, 20); // Adjust interval for streaming speed
+
+    return () => clearInterval(streamInterval);
+  };
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin inline-block">
+            <Loader2 className="w-8 h-8 text-cyan-500" />
+          </div>
+          <p className="text-zinc-400">Loading file contents...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!file) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -27,7 +86,7 @@ export function CodeEditor({ file }: CodeEditorProps) {
       height="100%"
       defaultLanguage="typescript"
       theme="vs-dark"
-      value={file.content || ""}
+      value={displayContent}
       options={{
         readOnly: true,
         minimap: { enabled: false },

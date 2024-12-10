@@ -1,30 +1,33 @@
 import express, { Request, Response } from "express";
-import Anthropic from "@anthropic-ai/sdk";
-import { ANTHROPIC_API_KEY } from "../config/env.js";
 import { BASE_PROMPT, getSystemPrompt } from "../prompts/prompts.js";
 import { basePrompt as nodeBasePrompt } from "../defaults/node.js";
 import { basePrompt as reactBasePrompt } from "../defaults/react.js";
 import { basePrompt as nextBasePrompt } from "../defaults/next.js";
-import { TextBlock } from "@anthropic-ai/sdk/resources/messages.mjs";
+import OpenAI from "openai";
+import dotenv from 'dotenv'
+dotenv.config()
 
-const anthropic = new Anthropic({
-  apiKey: ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.X_KEY,
+  baseURL: "https://api.x.ai/v1",
 });
+
 
 export const templateController = async (req: Request, res: Response) => {
   const prompt = req.body.prompt;
 
-  const response = await anthropic.messages.create({
-    messages: [{ role: "user", content: prompt }],
-    model: "claude-3-5-sonnet-20241022",
+  const completion = await openai.chat.completions.create({
+    model: "grok-beta",
     max_tokens: 200,
-    system:
-      "Return either node , react or next based on what do you think this project should be. Only return a single word either 'node' , 'react' or 'next'. Do not return anything extra",
+    messages: [
+      { role: "system", content: "Return either node , react or next based on what do you think this project should be. Only return a single word either 'node' , 'react' or 'next'. Do not return anything extra"},
+      { role: "user", content: prompt },
+    ],
   });
 
-  console.log(response);
+  console.log(completion.choices[0].message.content);
 
-  const answer = (response.content[0] as TextBlock).text;
+  const answer = (completion.choices[0].message).content;
   if (answer === "react") {
     res.json({
       prompts: [
@@ -64,16 +67,19 @@ export const templateController = async (req: Request, res: Response) => {
 export const chatController = async (req: Request, res: Response) => {
   const messages = req.body.messages;
 
-  const response = await anthropic.messages.create({
-    messages: messages,
-    model: "claude-3-5-sonnet-20241022",
+  const completion = await openai.chat.completions.create({
+    model: "grok-beta",
     max_tokens: 8192,
-    system: getSystemPrompt(),
+    messages: [
+      { role: "system", content: getSystemPrompt()},
+      ...messages,
+    ],
   });
+  
 
-  console.log(response);
+  console.log(completion.choices[0].message.content);
 
   res.json({
-    response: (response.content[0] as TextBlock)?.text,
+    response: completion.choices[0].message.content,
   });
 };

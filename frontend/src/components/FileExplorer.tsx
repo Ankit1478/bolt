@@ -1,89 +1,53 @@
-import React, { useState } from "react";
-import { FolderTree, File, ChevronRight, ChevronDown } from "lucide-react";
-import { FileItem } from "../types";
+import React from 'react';
+import { ChevronDown, ChevronRight, File, Folder } from 'lucide-react';
+import { FileItem } from '../types';
 
 interface FileExplorerProps {
   files: FileItem[];
   onFileSelect: (file: FileItem) => void;
+  isLoading?: boolean;
 }
 
-interface FileNodeProps {
-  item: FileItem;
-  depth: number;
-  onFileClick: (file: FileItem) => void;
-}
-
-function FileNode({ item, depth, onFileClick }: FileNodeProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const handleClick = () => {
-    if (item.type === "folder") {
-      setIsExpanded(!isExpanded);
-    } else {
-      onFileClick(item);
-    }
+export function FileExplorer({ files, onFileSelect, isLoading = false }: FileExplorerProps) {
+  const renderFileTree = (items: FileItem[], level = 0) => {
+    return items.map((item) => (
+      <div key={item.path} style={{ paddingLeft: `${level * 16}px` }}>
+        <button
+          onClick={() => item.type === 'file' && onFileSelect(item)}
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+            item.type === 'file'
+              ? 'hover:bg-gray-700/50 text-gray-300 hover:text-white'
+              : 'text-gray-400'
+          }`}
+        >
+          {item.type === 'folder' ? (
+            <>
+              <ChevronRight className="w-4 h-4 text-gray-500" />
+              <Folder className="w-4 h-4 text-blue-400" />
+            </>
+          ) : (
+            <File className="w-4 h-4 text-cyan-400" />
+          )}
+          <span className="text-sm truncate">{item.name}</span>
+        </button>
+        {item.type === 'folder' && item.children && renderFileTree(item.children, level + 1)}
+      </div>
+    ));
   };
 
-  return (
-    <div className="select-none">
-      <div
-        className="flex items-center gap-2 p-2 hover:bg-zinc-800/50 rounded-lg cursor-pointer transition-colors group"
-        style={{ paddingLeft: `${depth * 1.5}rem` }}
-        onClick={handleClick}
-      >
-        {item.type === "folder" && (
-          <span className="text-zinc-400">
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4" />
-            ) : (
-              <ChevronRight className="w-4 h-4" />
-            )}
-          </span>
-        )}
-        {item.type === "folder" ? (
-          <FolderTree className="w-4 h-4 text-cyan-500" />
-        ) : (
-          <File className="w-4 h-4 text-zinc-400 group-hover:text-zinc-300" />
-        )}
-        <span className="text-zinc-300 group-hover:text-white transition-colors">
-          {item.name}
-        </span>
+  if (isLoading) {
+    return (
+      <div className="p-4 text-center">
+        <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent text-blue-400 rounded-full" />
+        <p className="mt-2 text-sm text-gray-400">Loading files...</p>
       </div>
-      {item.type === "folder" && isExpanded && item.children && (
-        <div>
-          {item.children.map((child, index) => (
-            <FileNode
-              key={`${child.path}-${index}`}
-              item={child}
-              depth={depth + 1}
-              onFileClick={onFileClick}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+    );
+  }
 
-export function FileExplorer({ files, onFileSelect }: FileExplorerProps) {
   return (
-    <div className="h-full flex flex-col">
-      <h2 className="text-lg font-bold text-white tracking-tight [text-shadow:0_0_20px_#3B82F640] mb-4 flex items-center gap-2 flex-shrink-0">
-        <FolderTree className="w-5 h-5 text-cyan-500" />
-        File Explorer
-      </h2>
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 min-h-0">
-        <div className="space-y-1">
-          {files.map((file, index) => (
-            <FileNode
-              key={`${file.path}-${index}`}
-              item={file}
-              depth={0}
-              onFileClick={onFileSelect}
-            />
-          ))}
-        </div>
-      </div>
+    <div className="p-4">
+      <h2 className="text-lg font-semibold text-white mb-4">Project Files</h2>
+      <div className="space-y-1">{renderFileTree(files)}</div>
     </div>
   );
 }
