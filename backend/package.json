@@ -21,7 +21,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.6",
     "express": "^4.21.1",
-    "openai": "^4.76.0"
+    "openai": "^4.76.0",
+    "vercel": "^39.2.2"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
