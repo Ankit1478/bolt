@@ -1,23 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { StepsList } from '../components/StepsList';
 import { FileExplorer } from '../components/FileExplorer';
 import { TabView } from '../components/TabView';
-import { CodeEditor } from '../components/CodeEditor';
 import { PreviewFrame } from '../components/PreviewFrame';
 import { Step, FileItem, StepType } from '../types';
 import axios from 'axios';
-import { BACKEND_URL } from '../config';
+import { BACKEND_URL, NODE_ENV } from '../config';
 import { parseXml } from '../steps';
 import { useWebContainer } from '../hooks/useWebContainer';
-import { FileNode } from '@webcontainer/api';
 import { Loader } from '../components/Loader';
 import JSZip from 'jszip';
 import { 
-  MessageCircle, 
-  Code, 
-  Layout, 
-  Monitor,
   Download
 } from 'lucide-react';
 import { ChatInput } from '../components/ChatInput';
@@ -38,7 +32,7 @@ export function Builder() {
   const [steps, setSteps] = useState<Step[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
 
-   
+  const productionUrl = "https://bolt-green.vercel.app/";
   const downloadProjectAsZip = async () => {
     const zip = new JSZip();
   
@@ -403,13 +397,14 @@ export function Builder() {
               }}
             />
             <div className="h-[calc(100%-4rem)] overflow-auto">
-              {activeTab === "code" ? (
-                <CodeEditor file={selectedFile} loading={loading || !templateSet} />
-              ) : (
-                webcontainer ? (
-                  <PreviewFrame webContainer={webcontainer} files={files} />
-                ) : null
-              )}
+            {activeTab === "preview" && (
+  <PreviewFrame 
+    webContainer={webcontainer}
+    deploymentUrl={productionUrl}
+    files={files} 
+  />
+)}
+
             </div>
           </div>
         </div>
