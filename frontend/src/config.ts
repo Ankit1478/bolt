@@ -1,1 +1,1 @@
-export const BACKEND_URL = "http://161.35.239.55:3000/api";
+export const BACKEND_URL = "https://bolt-brvp.onrender.com/api";
